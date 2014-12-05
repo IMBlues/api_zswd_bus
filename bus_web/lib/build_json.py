@@ -13,6 +13,7 @@ def render_to_json(data):
     response = HttpResponse(data, content_type=content_type)
     return response
 
+
 def return_status(status_code):
     status = {
         'status': status_code

@@ -1,21 +1,11 @@
 #! -*- coding:utf-8 -*-
 import traceback
-import socket
 import struct
-import MySQLdb
-import os
-import sys
 import urllib
-
-PROJECT_DIR_PATH = '/www/zq_bus/web'
-sys.path.append(PROJECT_DIR_PATH)
-os.environ['DJANGO_SETTINGS_MODULE'] = 'zq_bus.settings'
-
 from lib.hexadecimal_deal import DataStruct
-from zq_bus import settings
 from bus.models import *
 
-from SocketServer import ThreadingTCPServer, StreamRequestHandler
+from SocketServer import StreamRequestHandler
 
 
 class BusStreamRequestHandler(StreamRequestHandler):
@@ -28,16 +18,17 @@ class BusStreamRequestHandler(StreamRequestHandler):
         判断包类型
         '''
 
-        if self.packed_data[0]==104 and self.packed_data[1]==104:
+        if self.packed_data[0] == 104 and self.packed_data[1] == 104:
             pass
 #            print 'ok'
-        elif self.packed_data[0]==0 and self.packed_data[1]==0:
+        elif self.packed_data[0] == 0 and self.packed_data[1] == 0:
             response_str = 'bbbbb'
             response_data = struct.pack(response_str, 84, 104, 26, 13, 10)
             self.request.sendall(response_data)
             print 'return right'
         else:
             pass
+
     def update_bus_coordinate(self, data, bus):
         '''
         更新车辆坐标
@@ -59,8 +50,8 @@ class BusStreamRequestHandler(StreamRequestHandler):
         stops = Stop.objects.filter(route=bus.route)
         distance = MAX_LENGTH
         for stop in stops:
-            temp_distance = ((bus.coordinate.latitude - stop.latitude)**2+\
-               (bus.coordinate.longitude - stop.longitude)**2)
+            temp_distance = ((bus.coordinate.latitude - stop.latitude)**2 +
+                             (bus.coordinate.longitude - stop.longitude)**2)
             if distance < temp_distance:
                 bus.stop = stop
         bus.save()
@@ -102,7 +93,7 @@ class BusStreamRequestHandler(StreamRequestHandler):
         try:
             coordinate = Coordinate.objects.all()[0]
         except:
-            coordinate =Coordinate(longitude = 114.233333,latitude = 30.5312333)
+            coordinate = Coordinate(longitude=114.233333, latitude=30.5312333)
             coordinate.save()
         route = Route.objects.all()[0]
         stop = Stop.objects.filter(route=route)[0]
@@ -117,11 +108,11 @@ class BusStreamRequestHandler(StreamRequestHandler):
         bus = str()
         try:
             if Bus.objects.filter(number=data['bus_number']):
-	        bus = Bus.objects.get(number=data['bus_number'])
+                bus = Bus.objects.get(number=data['bus_number'])
             else:
-		bus = self.register_new_bus(data)
-            self.update_bus_coordinate(data, bus)
-            self.update_bus_route(data, bus)
+                bus = self.register_new_bus(data)
+                self.update_bus_coordinate(data, bus)
+                self.update_bus_route(data, bus)
             if bus.route:
                 self.update_bus_stop(data, bus)
         except:
@@ -131,7 +122,6 @@ class BusStreamRequestHandler(StreamRequestHandler):
         test_coordinate = TestCoordinate(latitude=data['latitude'], longitude=data['longitude'])
         test_coordinate.save()
         print 'time:', test_coordinate.time, '; lat:', test_coordinate.latitude, '; lont:', test_coordinate.longitude
-
 
     def packdata(self, data):
 
@@ -150,7 +140,7 @@ class BusStreamRequestHandler(StreamRequestHandler):
         cell_id = DataStruct('h')
         status = DataStruct('bbbb')
         end = DataStruct('bb')
-        if len(data)==0:
+        if len(data) == 0:
             return (0, 0)
         if data[0] == 'h' and data[1] == 'h':
             print 'ok'
@@ -179,7 +169,7 @@ class BusStreamRequestHandler(StreamRequestHandler):
 
 #       百度地图API
         transform_url = "http://api.map.baidu.com/geoconv/v1/?coords=" + str(longitude) + \
-                     "," + str(latitude) + "&from=1&to=5&ak=7yTvUeESUHB7GTw9Pb9BRv1U"
+                        "," + str(latitude) + "&from=1&to=5&ak=7yTvUeESUHB7GTw9Pb9BRv1U"
 
         print transform_url
         transform_data = urllib.urlopen(transform_url).read()
@@ -188,21 +178,9 @@ class BusStreamRequestHandler(StreamRequestHandler):
             transform_data = eval(transform_data)['result'][0]
             latitude = transform_data['y']
             longitude = transform_data['x']
-        except:
-            print 'error'
-#       高德地图API
-#        transform_url = "http://api.zdoz.net/transgps.aspx?"+ \
-#        "lat=" + str(latitude) + "&lng=" + str(longitude)
-#        print transform_url
-#        transform_data = urllib.urlopen(transform_url).read()
-#        print transform_data
-#        try:
-#            transform_data = eval(transform_data)
-#            latitude = transform_data['Lng']
-#            longitude = transform_data['Lat']
-#        except:
-#            print 'error'
-        latitude =  float(latitude)
+        except Exception as ex:
+            print 'Exception after calling API to transform:', ex
+        latitude = float(latitude)
         longitude = float(longitude)
 
         data = {
@@ -220,20 +198,18 @@ class BusStreamRequestHandler(StreamRequestHandler):
 
         return packed_data
 
-
     def handle(self):
 
         while True:
             try:
-                data = self.request.recv(1024)
-                temp_data = ""
-                if len(data)==0:
-                    temp_data += data
+                data = self.request.recv(1024).strip()
+                if len(data) == 0:
+                    print "the startup 1024 bytes of data is empty"
                 else:
-         	    print "len(data): %d" % (len(data))
-	            print data
-		    self.packed_data = self.packdata(data)
-		    self.judge_data_type()
+                    print "len(data): %d" % (len(data))
+                    print data
+                    self.packed_data = self.packdata(data)
+                    self.judge_data_type()
             except:
                 traceback.print_exc()
                 break

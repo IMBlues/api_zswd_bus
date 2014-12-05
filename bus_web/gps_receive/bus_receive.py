@@ -1,23 +1,11 @@
 # -*-coding:utf-8 -*-
 from streamhandler import BusStreamRequestHandler
 from SocketServer import ThreadingTCPServer
+from bus.models import *
+from gps_settings import *
 
 
-'''
-HOST = '0.0.0.0'
-PORT = 8080
-BUFSIZ = 1024
-
-address = (HOST, PORT)
-tcpSerSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-tcpSerSock.bind(address)
-tcpSerSock.listen(5)
-'''
-
-
-class DataStruct:
-
-    data_type = ''
+class DataStructs:
 
     def __init__(self, temp_type):
         data_type = temp_type
@@ -25,15 +13,13 @@ class DataStruct:
     @staticmethod
     def update_bus_coordinate(data, bus):
         coordinate = Coordinate(longitude=data['longitude'],
-        latitude=data['latitude'], bus_number=data['bus_number'])
+                                latitude=data['latitude'], bus_number=data['bus_number'])
         coordinate.save()
         bus.coordinate = coordinate
         bus.save()
 
     @staticmethod
     def update_bus_stop(data, bus):
-
-        MAX_LENGTH = 21000000
 
         stops = Stop.objects.filter(route=bus.route)
         distance = MAX_LENGTH
@@ -46,13 +32,11 @@ class DataStruct:
 
     @staticmethod
     def update_bus_route(data, bus):
-        ERROR_VALUE =0.000006
 
         routes = Route.objects.all()
         for r in routes:
-            if (abs(r.special_coordinate.latitude - data['latitude'])<ERROR_VALUE)\
-                and (abs(r.special_coordinate.longitude -
-                data['longitude']<ERROR_VALUE)):
+            if (abs(r.special_coordinate.latitude - data['latitude']) < ERROR_VALUE) \
+                    and (abs(r.special_coordinate.longitude - data['longitude'] < ERROR_VALUE)):
 
                 bus.route = r
         bus.save()
@@ -61,22 +45,33 @@ class DataStruct:
     def datasave(data):
         try:
             try:
-                bus = Bus.objects.get(number= data['bus_number'])
-            except:
+                bus = Bus.objects.get(number=data['bus_number'])
+            except Exception as ex:
+                print "Exception in get data:", ex
                 route = Route.objects.get(id=1)
-                bus = Bus(number = data['bus_number'], route=route)
-            DataStruct.update_bus_coordinate(data, bus)
-            DataStruct.update_bus_route(data, bus)
-            DataStruct.update_bus_stop(data, bus)
+                bus = Bus(number=data['bus_number'], route=route)
+
+            DataStructs.update_bus_coordinate(data, bus)
+            DataStructs.update_bus_route(data, bus)
+            DataStructs.update_bus_stop(data, bus)
             print 'update success'
-        except:
-            pass
+        except Exception as ex:
+            print "Exception in update data:", ex
 
 if __name__ == '__main__':
-    HOST = '0.0.0.0'
-    PORT = 12333 
-    BUFSIZ = 1024
+
     ADDR = (HOST, PORT)
     ThreadingTCPServer.allow_reuse_address = True
     server = ThreadingTCPServer(ADDR, BusStreamRequestHandler)
     server.serve_forever()
+
+'''
+HOST = '0.0.0.0'
+PORT = 8080
+BUFSIZ = 1024
+
+address = (HOST, PORT)
+tcpSerSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+tcpSerSock.bind(address)
+tcpSerSock.listen(5)
+'''
