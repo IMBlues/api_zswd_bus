@@ -85,7 +85,7 @@ class BusStreamRequestHandler(StreamRequestHandler):
             latitude = transform_data['y']
             longitude = transform_data['x']
         except Exception as ex:
-            print 'Exception after calling API to transform:', ex
+            print 'Exception after calling API to unpack:', ex
         latitude = float(latitude)
         longitude = float(longitude)
 
@@ -117,7 +117,7 @@ class BusStreamRequestHandler(StreamRequestHandler):
         bus.save()
 
     @staticmethod
-    def update_bus_stop(self, data, bus):
+    def update_bus_stop(data, bus):
         '''
         更新车站
         '''
