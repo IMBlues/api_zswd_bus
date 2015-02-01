@@ -33,7 +33,7 @@ class BusStreamRequestHandler(StreamRequestHandler):
 
         start = DataStruct('bb')
         length = DataStruct('b')
-        LAC = DataStruct('H')
+        LAC = DataStruct('h')
         terminal_id = DataStruct('bbbbbbbb')
         info_code = DataStruct('h')
         agreement_code = DataStruct('b')
@@ -47,22 +47,24 @@ class BusStreamRequestHandler(StreamRequestHandler):
         status = DataStruct('bbbb')
         end = DataStruct('bb')
         if len(data) == 0:
-            return (0, 0)
+            return 0, 0
         if data[0] == 'h' and data[1] == 'h':
             print 'ok'
         else:
-            return (0, 0)
+            return 0, 0
         if data[2] == '%':
             print 'position_update'
         else:
             print 'live_confirm'
-            return (0, 0)
+            return 0, 0
 
         form_string = 'B' * len(data)
         try:
             packed_data = struct.unpack(form_string, data)
-        except:
-            return (0, 0)
+        except Exception as ex:
+            print "Exception during Unpacking data:", ex
+            return 0, 0
+
         bus_number = str()
         for i in range(5, 13):
             temp_str = str(packed_data[i]/16)+str(packed_data[i]%16)
@@ -206,7 +208,7 @@ class BusStreamRequestHandler(StreamRequestHandler):
                 if len(data) == 0:
                     print "the startup 1024 bytes of data is empty"
                 else:
-                    print "len(data): %d" % (len(data))
+                    print "the length of startup 1024 bytes' data is %d" % (len(data))
                     self.packed_data = self.packdata(data)
                     self.judge_data_type()
             except Exception as ex:
