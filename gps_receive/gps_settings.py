@@ -2,9 +2,7 @@ __author__ = 'blues'
 import os
 import sys
 
-PROJECT_DIR_PATH = '/www/zq_bus/web'
-sys.path.append(PROJECT_DIR_PATH)
-os.environ['DJANGO_SETTINGS_MODULE'] = 'zq_bus.settings'
+PROJECT_DIR_PATH = '/www/zq_bus/bus_web'
 
 HOST = '0.0.0.0'
 PORT = 12333

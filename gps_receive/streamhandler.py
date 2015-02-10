@@ -1,9 +1,15 @@
 #! -*- coding:utf-8 -*-
 import struct
 import urllib
+import os
+import sys
+from gps_settings import *
+
+sys.path.append(PROJECT_DIR_PATH)
+os.environ['DJANGO_SETTINGS_MODULE'] = 'zq_bus.settings'
+
 from lib.hexadecimal_deal import DataStruct
 from bus.models import *
-from gps_settings import *
 from SocketServer import StreamRequestHandler
 
 

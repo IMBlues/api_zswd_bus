@@ -59,14 +59,23 @@ WSGI_APPLICATION = 'zq_bus.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.6/ref/settings/#databases
 
+'''
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'zq_bus',
         'USER': 'zq_bus',
-        'PASSWORD': 'wechat@ziqiang@mysql@zq_bus',
-        'HOST': '127.0.0.1',
+        'PASSWORD': 'mysql@zq_bus',
+        'HOST': 'localhost',
         'PORT': '3306',
+    }
+}
+'''
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'zq_bus.db',
     }
 }
 

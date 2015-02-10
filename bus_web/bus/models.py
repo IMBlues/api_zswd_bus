@@ -1,12 +1,12 @@
 #!-*- coding:utf-8 -*-
 from django.db import models
+
 from lib.build_json import render_to_json
 
 
 RECEIVE_BUS_ID = 'id'
 RECEIVE_BUS_LATITUDE = 'latitude'
 RECEIVE_BUS_LONGITUDE = 'longitude'
-
 
 
 #坐标类
@@ -25,6 +25,7 @@ class Coordinate(models.Model):
     def __unicode__(self):
         return "%d_by_%s"  % (self.id, self.time)
 
+
 #测试坐标类
 class TestCoordinate(models.Model):
 
@@ -35,6 +36,8 @@ class TestCoordinate(models.Model):
     class Meta:
         verbose_name = u'测试坐标'
         verbose_name_plural = u'测试坐标类'
+
+
 #特征点坐标类
 class SpecialCoordinate(models.Model):
 
@@ -62,7 +65,8 @@ class Route(models.Model):
 
     def __unicode__(self):
         return "%s-%s" % (self.departure_stop, self.final_stop)
-        
+
+
 #车站类        
 class Stop(models.Model):
 

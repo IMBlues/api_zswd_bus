@@ -1,8 +1,9 @@
 # -*-coding:utf-8 -*-
-from streamhandler import BusStreamRequestHandler
 from SocketServer import ThreadingTCPServer
-from bus.models import *
+
+from streamhandler import BusStreamRequestHandler
 from gps_settings import *
+from bus.models import *
 
 
 class DataStructs:
@@ -42,7 +43,7 @@ class DataStructs:
         bus.save()
 
     @staticmethod
-    def datasave(data):
+    def data_save(data):
         try:
             try:
                 bus = Bus.objects.get(number=data['bus_number'])

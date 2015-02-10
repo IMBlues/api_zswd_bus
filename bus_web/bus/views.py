@@ -1,10 +1,10 @@
 #!-*- coding:utf-8 -*-
 
-from django.http import HttpResponse, Http404
-from django.shortcuts import render, render_to_response
-from models import Coordinate, Route, Bus, Stop
-from lib.build_json import render_to_json, return_status
-from zq_bus.settings import OUT_WORK_STATUS
+#from django.http import HttpResponse, Http404
+#from django.shortcuts import render, render_to_response
+from models import Route, Bus, Stop
+from build_json import render_to_json, return_status
+#from zq_bus.settings import OUT_WORK_STATUS
 
 RECEIVE_BUS_ID = 'id'
 RECEIVE_BUS_LATITUDE = 'latitude'
@@ -17,10 +17,7 @@ MAX_NUM = 100000
 '''
 
 
-
 #更新路线
-
-
 def update_bus_route(request):
 
     if request.method == 'POST':
@@ -29,7 +26,7 @@ def update_bus_route(request):
         routes = Route.objects.all()
         for r in routes:
             if (abs(r.special_coordinate.latitude - latitude) <= 0.000006) \
-                and (abs(r.special_coordinate.longitude - longitude) <= 0.000006):
+                    and (abs(r.special_coordinate.longitude - longitude) <= 0.000006):
                 Bus.objects.get(request.POST.get(RECEIVE_BUS_ID)).route = r
         else:
             pass
@@ -41,7 +38,7 @@ def update_bus_route(request):
         routes = Route.objects.all()
         for r in routes:
             if (abs(r.special_coordinate.latitude - latitude) <= 0.000006) \
-                and (abs(r.special_coordinate.longitude - longitude) <= 0.000006):
+                    and (abs(r.special_coordinate.longitude - longitude) <= 0.000006):
                 Bus.objects.get(request.GET.get(RECEIVE_BUS_ID)).route = r
         else:
             pass
@@ -50,9 +47,8 @@ def update_bus_route(request):
         status = return_status(0)
         return render_to_json(status)
 
+
 #更新校车所属站点
-
-
 def update_bus_stop(request, bus, latitude, longitude):
 
     try:
@@ -74,8 +70,6 @@ def update_bus_stop(request, bus, latitude, longitude):
 
 
 #更新校车位置
-
-
 def update_bus_position(request):
     if request.method == 'POST':
         try:
@@ -106,6 +100,7 @@ def update_bus_position(request):
 '''
 APP接收端
 '''
+
 
 #返回校车数据
 def get_bus_info(request):
@@ -173,8 +168,6 @@ def get_bus_info(request):
 
 
 #获取所在位置
-
-
 def return_user_position(request):
     if request.method == 'POST':
         try:
@@ -246,8 +239,8 @@ def return_user_position(request):
         status = return_status(0)
         return render_to_json(status)
 
-#返回线路
 
+#返回线路
 def return_route(request):
     try:
         routes = Route.objects.all()
