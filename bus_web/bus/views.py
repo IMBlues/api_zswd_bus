@@ -3,7 +3,7 @@
 #from django.http import HttpResponse, Http404
 #from django.shortcuts import render, render_to_response
 from models import Route, Bus, Stop
-from build_json import render_to_json, return_status
+from lib.build_json import render_to_json, return_status
 #from zq_bus.settings import OUT_WORK_STATUS
 
 RECEIVE_BUS_ID = 'id'

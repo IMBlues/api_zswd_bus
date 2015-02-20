@@ -5,7 +5,7 @@ import struct
 HOST = '127.0.0.1'
 PORT = 8080
 BUFSIZ = 1024
-ADDR = (HOST,PORT)
+ADDR = (HOST, PORT)
 
 tcpCliSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 tcpCliSock.connect(ADDR)

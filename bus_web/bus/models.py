@@ -1,6 +1,5 @@
 #!-*- coding:utf-8 -*-
 from django.db import models
-
 from lib.build_json import render_to_json
 
 
@@ -23,7 +22,7 @@ class Coordinate(models.Model):
         verbose_name_plural = u'坐标类'
 
     def __unicode__(self):
-        return "%d_by_%s"  % (self.id, self.time)
+        return "%d_by_%s" % (self.id, self.time)
 
 
 #测试坐标类
@@ -52,6 +51,7 @@ class SpecialCoordinate(models.Model):
     def __unicode__(self):
         return "%s" % self.route_name
 
+
 #路线类
 class Route(models.Model):
 
@@ -70,7 +70,6 @@ class Route(models.Model):
 #车站类        
 class Stop(models.Model):
 
-    
     name = models.CharField(u'名称', max_length=30)
     route = models.ForeignKey(Route, verbose_name=u'路线')
     longitude = models.FloatField(u'经度', default=0)
@@ -92,6 +91,7 @@ class Bus(models.Model):
     coordinate = models.OneToOneField(Coordinate, verbose_name=u'当前坐标')
     stop = models.ForeignKey(Stop, verbose_name=u'站点')
     number = models.CharField(max_length=100, verbose_name=u'车辆代号')
+
     class Meta:
         verbose_name = u'校车'
         verbose_name_plural = u'校车类'
