@@ -9,14 +9,16 @@ from gps_settings import *
 sys.path.append(PROJECT_DIR_PATH)
 os.environ['DJANGO_SETTINGS_MODULE'] = 'zq_bus.settings'
 
-from lib.hexadecimal_deal import DataStruct
 from bus.models import *
 from SocketServer import StreamRequestHandler
+from TerminalDataPacket import *
 
 
 class BusStreamRequestHandler(StreamRequestHandler):
 
-    packed_data = str()
+    packed_data = TerminalDataPacket()
+    unpacked_data = ()
+    data_type = -1
 
     '''
     测试后台输入控制函数
@@ -112,116 +114,111 @@ class BusStreamRequestHandler(StreamRequestHandler):
         bus.save()
 
     '''
-    判断包类型
+    数据流处理主调用函数
     '''
-    def judge_data_type(self, raw_data):
-        data_type = {
-            'ip': 0,
-            'gps': 1,
-            'heartbreak': 2,
-            'heartbreak_return': 3,
-            's2c_info_cn': 4,
-            's2c_info_en': 5,
-            'c2s_info': 6,
-            's2c_command': 7,
-            'c2s_command': 8,
+    def handle(self):
+        while True:
+            try:
+                raw_data = self.request.recv(1024).strip()
+                if len(raw_data) == 0:
+                    self.debug_log(u"the data is empty!")
+                else:
+                    self.debug_log(u"the length of data is %d" + str(len(raw_data)))
+                    self.judge_and_pack(raw_data)
+            except Exception as ex:
+                self.debug_log(u"Exception in receiving:" + str(ex))
+                break
+
+    '''
+    判断包类型与数据包封装
+    '''
+    def judge_and_pack(self, raw_data):
+        global unpacked_data
+        global packed_data
+
+        #类型判断句柄字典
+        data_type_handler = {
+            'gps': (0x6868, 0x10),
+            'heartbreak': (0x6868, 0x1A),
+            'ip': (0x6868, 0x1B),
+            'command': (0x6868, 0x1C)
         }
 
+        #分割成以字节为单位的元组
         form_string = 'B' * len(raw_data)
         try:
             unpacked_data = struct.unpack(form_string, raw_data)
         except Exception as ex:
             self.debug_log(u"Exception during Unpacking data:" + str(ex))
 
+        #获取数据包类型判断句柄
+        start_id = hex(unpacked_data[0:2])
+        protocol_id = hex(unpacked_data[15:16])
+        judge_handler = (start_id, protocol_id)
 
+        if judge_handler == data_type_handler['gps']:
 
-    '''
-    数据包封装
-    '''
-    def repack_data(self, unpacked_data):
-        return unpacked_data
+            end_id = hex(unpacked_data[40:42])
+            if end_id == 0x0D0A:
+                #坐标转换
+                latitude = (unpacked_data[22] * (256 ** 3) + unpacked_data[23] * (256 ** 2) +
+                            unpacked_data[24] * 256 + unpacked_data[25])
+                latitude = (latitude + 0.0) / (30000*60)
+                longitude = (unpacked_data[26] * (256 ** 3) + unpacked_data[27] * (256 ** 2) +
+                             unpacked_data[28] * 256 + unpacked_data[29])
+                longitude = (longitude + 0.0) / (30000*60)
 
-    def pack_data(self, data):
-        start = DataStruct('bb')
-        length = DataStruct('b')
-        LAC = DataStruct('h')
-        terminal_id = DataStruct('bbbbbbbb')
-        info_code = DataStruct('h')
-        agreement_code = DataStruct('b')
-        datetime = DataStruct('bbbbbb')
-        latitude = DataStruct('bbbb')
-        longitude = DataStruct('bbbb')
-        speed = DataStruct('b')
-        direction = DataStruct('bb')
-        MNC = DataStruct('b')
-        cell_id = DataStruct('h')
-        status = DataStruct('bbbb')
-        end = DataStruct('bb')
-        if len(data) == 0:
-            return 0, 0
-        if data[0] == 'h' and data[1] == 'h':
-            print 'ok'
+                #百度地图API
+                transform_url = "http://api.map.baidu.com/geoconv/v1/?coords=" + str(longitude) + \
+                                "," + str(latitude) + "&from=1&to=5&ak=7yTvUeESUHB7GTw9Pb9BRv1U"
+
+                transform_data = urllib.urlopen(transform_url).read()
+                try:
+                    transform_data = eval(transform_data)['result'][0]
+                    latitude = transform_data['y']
+                    longitude = transform_data['x']
+                except Exception as ex:
+                    self.debug_log(u"Exception after calling API to unpack:" + str(ex))
+
+                latitude = float(latitude)
+                longitude = float(longitude)
+
+                #获取IMEI号（车辆标识）
+                IMEI = str()
+                for i in range(5, 13):
+                    temp_str = str(unpacked_data[i]/16)+str(unpacked_data[i] % 16)
+                    IMEI += str(temp_str)
+
+                packed_data = GPSDataPacket(0, start_id, unpacked_data[2:3], hex(unpacked_data[3:5]),
+                                            IMEI, unpacked_data[13:15], protocol_id, unpacked_data[16:22], latitude,
+                                            longitude, unpacked_data[30:31], unpacked_data[31:33], unpacked_data[33:34],
+                                            hex(unpacked_data[34:36]), unpacked_data[36:40])
+                self.debug_log(u"have packed the GPSData!")
+
+                #调用数据存储
+                data_for_app = {
+                    'bus_number': packed_data.IMEI,
+                    'latitude': packed_data.latitude,
+                    'longitude': packed_data.longitude,
+                }
+                self.save(data_for_app)
+                self.debug_log(u"have packed the GPSData for app!")
+            else:
+                self.debug_log(u"the GPSData packet is not complete,and it will be discarded")
+
+        elif judge_handler == data_type_handler['heartbreak']:
+            pass
+        elif judge_handler == data_type_handler['ip']:
+            pass
+        elif judge_handler == data_type_handler['command']:
+            pass
         else:
-            return 0, 0
-        if data[2] == '%':
-            print 'position_update'
-        else:
-            print 'live_confirm'
-            return 0, 0
-
-        form_string = 'B' * len(data)
-        try:
-            packed_data = struct.unpack(form_string, data)
-        except Exception as ex:
-            print "Exception during Unpacking data:", ex
-            return 0, 0
-
-        bus_number = str()
-        for i in range(5, 13):
-            temp_str = str(packed_data[i]/16)+str(packed_data[i]%16)
-            bus_number += str(temp_str)
-
-        latitude = packed_data[22] * (256 ** 3) + packed_data[23] * (256 ** 2) + packed_data[24] * 256 + packed_data[25]
-        latitude = (latitude + 0.0) / (30000*60)
-        longitude = packed_data[26] * (256 ** 3) + packed_data[27] * (256 ** 2) + packed_data[28] * 256 + packed_data[29]
-        longitude = (longitude + 0.0) / (30000*60)
-
-#       百度地图API
-        transform_url = "http://api.map.baidu.com/geoconv/v1/?coords=" + str(longitude) + \
-                        "," + str(latitude) + "&from=1&to=5&ak=7yTvUeESUHB7GTw9Pb9BRv1U"
-
-        print transform_url
-        transform_data = urllib.urlopen(transform_url).read()
-#        print transform_data
-        try:
-            transform_data = eval(transform_data)['result'][0]
-            latitude = transform_data['y']
-            longitude = transform_data['x']
-        except Exception as ex:
-            print 'Exception after calling API to unpack:', ex
-        latitude = float(latitude)
-        longitude = float(longitude)
-
-        data = {
-            'bus_number': bus_number,
-            'latitude': latitude,
-            'longitude': longitude,
-        }
-        print data
-
-        #存储更新坐标数据
-        self.save(data)
-
-        #测试坐标数据
-        #self.temp_save(data)
-
-        return packed_data
+            self.debug_log(u"Unknown data type!")
 
     '''
     数据库存储
     '''
     def save(self, data):
-        bus = str()
         try:
             if Bus.objects.filter(number=data['bus_number']):
                 bus = Bus.objects.get(number=data['bus_number'])
@@ -231,19 +228,5 @@ class BusStreamRequestHandler(StreamRequestHandler):
                 self.update_bus_route(data, bus)
             if bus.route:
                 self.update_bus_stop(data, bus)
-        except:
-            pass
-
-    def handle(self):
-        while True:
-            try:
-                raw_data = self.request.recv(1024).strip()
-                if len(raw_data) == 0:
-                    self.debug_log(u"the data is empty!")
-                else:
-                    self.debug_log(u"the length of data is %d" + str(len(raw_data)))
-                    self.judge_data_type(raw_data)
-                    self.packed_data = self.repack_data(raw_data)
-            except Exception as ex:
-                self.debug_log(u"Exception in receiving:" + str(ex))
-                break
+        except Exception as ex:
+            self.debug_log(u"Exception during save GPSData into DB:" + str(ex))
