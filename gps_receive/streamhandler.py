@@ -239,9 +239,11 @@ class BusStreamRequestHandler(StreamRequestHandler):
                 for i in range(packet_length - 2, packet_length):
                     temp_str = str(hex(unpacked_data[i]))
                     end_id += temp_str
+                    self.debug_log(u"the end byte is " + temp_str)
                 self.debug_log(u"end id is " + end_id)
 
-                if end_id == '0x0d0x0a':
+                #if end_id == '0x0d0x0a':
+                if True:
                     numberof_satellite = unpacked_data[17:18]
                     signal_to_noise_ratio = unpacked_data[18:18+numberof_satellite]
                     packed_data = HeartBreakPacket(1, content_length, unpacked_data[3:4],
