@@ -221,6 +221,7 @@ class BusStreamRequestHandler(StreamRequestHandler):
                                             longitude, unpacked_data[30], unpacked_data[31:33], unpacked_data[33],
                                             cell_id, unpacked_data[36:40])
                 self.debug_log(u"have packed the GPSData which is " + str(packed_data.packet_length) + u"bytes")
+                self.debug_log(u"the bus' IMEI: " + str(packed_data.IMEI))
 
                 #调用数据存储
                 data_for_app = {
@@ -267,8 +268,12 @@ class BusStreamRequestHandler(StreamRequestHandler):
                     return_data = s.pack(*values)
                     self.debug_log(u"the return data is" + str(values))
 
-                    self.request.send(return_data)
-                    self.debug_log(u"heartbreak data has been send back successfully!")
+                    try:
+                        self.request.send(return_data)
+                        self.debug_log(u"heartbreak data has been send back successfully!")
+                    except Exception as ex:
+                        self.debug_log(u"Exception during sending the back packet:" + str(ex))
+
                     print "----------------------------------------"
                 else:
                     self.debug_log(u"the heartbreak packet is not complete, and it will be "
