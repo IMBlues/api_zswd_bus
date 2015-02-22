@@ -28,9 +28,9 @@ class BusStreamRequestHandler(StreamRequestHandler):
         now = unicode(time.strftime('%Y/%m/%d-%H:%M:%S', time.localtime(time.time())))
         if GPS_DEBUG:
             if debug_info is not None:
-                print now + u":" + debug_info
+                print u"DEBUG:" + now + u":" + debug_info
             else:
-                print now + u":sorry,no debug info..."
+                print u"DEBUG:" + now + u":sorry,no debug info..."
         else:
             return
 
@@ -173,7 +173,7 @@ class BusStreamRequestHandler(StreamRequestHandler):
                 end_id += temp_str
 
             self.debug_log(u"end id is" + end_id)
-            if end_id == '0x0d0x0a':
+            if end_id == '0xd0xa':
                 #获取LAC号
                 LAC = str()
                 for i in range(3, 5):
@@ -203,11 +203,14 @@ class BusStreamRequestHandler(StreamRequestHandler):
                     transform_data = eval(transform_data)['result'][0]
                     latitude = transform_data['y']
                     longitude = transform_data['x']
+
                 except Exception as ex:
                     self.debug_log(u"Exception after calling API to unpack:" + str(ex))
 
                 latitude = float(latitude)
                 longitude = float(longitude)
+                self.debug_log(u"the latitude: " + str(latitude))
+                self.debug_log(u"the longitude: " + str(longitude))
 
                 packed_data = GPSDataPacket(0, unpacked_data[2:3], LAC, IMEI,
                                             unpacked_data[13:15], protocol_id, unpacked_data[16:22], latitude,
@@ -223,8 +226,10 @@ class BusStreamRequestHandler(StreamRequestHandler):
                 }
                 self.save(data_for_app)
                 self.debug_log(u"have packed the GPSData for app!")
+                print "-----------------------------------------------------"
             else:
                 self.debug_log(u"the GPSData packet is not complete,and it will be discarded")
+                print "-----------------------------------------------------"
 
         #数据包为心跳包
         elif judge_handler == data_type_handler['heartbreak']:
@@ -244,7 +249,7 @@ class BusStreamRequestHandler(StreamRequestHandler):
 
                 #if end_id == '0x0d0x0a':
                 if True:
-                    numberof_satellite = unpacked_data[17:18]
+                    numberof_satellite = unpacked_data[17]
                     signal_to_noise_ratio = unpacked_data[18:18+numberof_satellite]
                     packed_data = HeartBreakPacket(1, content_length, unpacked_data[3:4],
                                                    unpacked_data[4:5], IMEI, unpacked_data[13:15],
@@ -260,23 +265,29 @@ class BusStreamRequestHandler(StreamRequestHandler):
 
                     self.request.send(return_data)
                     self.debug_log(u"heartbreak data has been send back successfully!")
+                    print "-----------------------------------------------------"
                 else:
                     self.debug_log(u"the heartbreak packet is not complete, and it will be "
                                    u"discarded")
+                    print "-----------------------------------------------------"
             else:
                 self.debug_log(u"the heartbreak packet is too short!")
+                print "-----------------------------------------------------"
 
         #数据包为IP请求包
         elif judge_handler == data_type_handler['ip']:
             self.debug_log(u"the packet is ip Data")
+            print "-----------------------------------------------------"
             pass
 
         #数据包为指令包
         elif judge_handler == data_type_handler['command']:
             self.debug_log(u"the packet is command Data")
+            print "-----------------------------------------------------"
             pass
         else:
             self.debug_log(u"Unknown data type!")
+            print "-----------------------------------------------------"
 
     '''
     数据库存储
