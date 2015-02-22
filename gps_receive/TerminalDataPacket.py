@@ -26,10 +26,9 @@ class TerminalDataPacket():
 
 class GPSDataPacket(TerminalDataPacket):
 
-    def __init__(self, data_type, start_id, packet_length, LAC, IMEI, sequence_id, protocol_id,
+    def __init__(self, data_type, packet_length, LAC, IMEI, sequence_id, protocol_id,
                  date_time, latitude, longitude, speed, direction, MNC, cell_id, phone_status):
         self.data_type = data_type
-        self.start_id = start_id
         self.packet_length = packet_length
         self.LAC = LAC
         self.IMEI = IMEI
@@ -46,7 +45,20 @@ class GPSDataPacket(TerminalDataPacket):
 
 
 class HeartBreakPacket(TerminalDataPacket):
-    data_type = 1
+
+    def __init__(self, data_type, content_length, voltage_strength, GSM_signal_strength,
+                 IMEI, sequence_id, protocol_id, locator_status, numberof_satellite,
+                 signal_to_noise_ratio):
+        self.data_type = data_type
+        self.content_length = content_length
+        self.voltage_strength = voltage_strength
+        self.GSM_signal_strength = GSM_signal_strength
+        self.IMEI = IMEI
+        self.sequence_id = sequence_id
+        self.protocol_id = protocol_id
+        self.locator_status = locator_status
+        self.numberof_satellite = numberof_satellite
+        self.signal_to_noise_ratio = signal_to_noise_ratio
 
 
 class ExceptionPacket(TerminalDataPacket):

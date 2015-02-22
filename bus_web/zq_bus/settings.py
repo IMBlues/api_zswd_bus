@@ -113,7 +113,7 @@ MIN_LATITUDE = 30.8
 MAX_LONGITUDE = 114.6
 MIN_LONGITUDE = 114.5
 
-# more details on how to customize your logging configuration.
+#后台log配置
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': True,

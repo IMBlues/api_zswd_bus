@@ -156,6 +156,13 @@ class BusStreamRequestHandler(StreamRequestHandler):
         protocol_id = hex(unpacked_data[15:16])
         judge_handler = (start_id, protocol_id)
 
+        #获取IMEI号（车辆标识）
+        IMEI = str()
+        for i in range(5, 13):
+            temp_str = str(unpacked_data[i]/16)+str(unpacked_data[i] % 16)
+            IMEI += str(temp_str)
+
+        #数据包为GPS数据
         if judge_handler == data_type_handler['gps']:
 
             end_id = hex(unpacked_data[40:42])
@@ -183,13 +190,7 @@ class BusStreamRequestHandler(StreamRequestHandler):
                 latitude = float(latitude)
                 longitude = float(longitude)
 
-                #获取IMEI号（车辆标识）
-                IMEI = str()
-                for i in range(5, 13):
-                    temp_str = str(unpacked_data[i]/16)+str(unpacked_data[i] % 16)
-                    IMEI += str(temp_str)
-
-                packed_data = GPSDataPacket(0, start_id, unpacked_data[2:3], hex(unpacked_data[3:5]),
+                packed_data = GPSDataPacket(0, unpacked_data[2:3], hex(unpacked_data[3:5]),
                                             IMEI, unpacked_data[13:15], protocol_id, unpacked_data[16:22], latitude,
                                             longitude, unpacked_data[30:31], unpacked_data[31:33], unpacked_data[33:34],
                                             hex(unpacked_data[34:36]), unpacked_data[36:40])
@@ -206,10 +207,40 @@ class BusStreamRequestHandler(StreamRequestHandler):
             else:
                 self.debug_log(u"the GPSData packet is not complete,and it will be discarded")
 
+        #数据包为心跳包
         elif judge_handler == data_type_handler['heartbreak']:
-            pass
+            content_length = unpacked_data[2:3]
+            if content_length >= 20:
+                packet_length = content_length + 3 + 2
+                end_id = unpacked_data[packet_length - 3:packet_length - 1]
+                if end_id == 0x0D0A:
+                    numberof_satellite = unpacked_data[17:18]
+                    signal_to_noise_ratio = unpacked_data[18:18+numberof_satellite]
+                    packed_data = HeartBreakPacket(1, content_length, unpacked_data[3:4],
+                                                   unpacked_data[4:5], IMEI, unpacked_data[13:15],
+                                                   protocol_id, unpacked_data[16:17], numberof_satellite,
+                                                   signal_to_noise_ratio)
+                    self.debug_log(u"have packed the HeartBreakData, and ready to send back")
+
+                    #心跳包应答
+                    values = (0x54, 0x68, 0x1A, 0x0D, 0x0A)
+                    s = struct.Struct('BBBBB')
+                    return_data = s.pack(*values)
+                    self.debug_log(u"the return data is" + str(values))
+
+                    self.request.send(return_data)
+                    self.debug_log(u"heartbreak data has been send back successfully!")
+                else:
+                    self.debug_log(u"the heartbreak packet is not complete, and it will be"
+                                   u"discarded")
+            else:
+                self.debug_log(u"the heartbreak packet is too short!")
+
+        #数据包为IP请求包
         elif judge_handler == data_type_handler['ip']:
             pass
+
+        #数据包为指令包
         elif judge_handler == data_type_handler['command']:
             pass
         else:
