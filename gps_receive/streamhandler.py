@@ -138,10 +138,10 @@ class BusStreamRequestHandler(StreamRequestHandler):
 
         #类型判断句柄字典
         data_type_handler = {
-            'gps': (0x6868, 0x10),
-            'heartbreak': (0x6868, 0x1A),
-            'ip': (0x6868, 0x1B),
-            'command': (0x6868, 0x1C)
+            'gps': 0x10,
+            'heartbreak': 0x1A,
+            'ip': 0x1B,
+            'command': 0x1C,
         }
 
         #分割成以字节为单位的元组
@@ -152,10 +152,8 @@ class BusStreamRequestHandler(StreamRequestHandler):
             self.debug_log(u"Exception during Unpacking data:" + str(ex))
 
         #获取数据包类型判断句柄
-        self.debug_log(str(unpacked_data[0:2]))
-        start_id = hex(unpacked_data[0:2])
         protocol_id = hex(unpacked_data[15:16])
-        judge_handler = (start_id, protocol_id)
+        judge_handler = protocol_id
 
         #获取IMEI号（车辆标识）
         IMEI = str()
@@ -163,11 +161,29 @@ class BusStreamRequestHandler(StreamRequestHandler):
             temp_str = str(unpacked_data[i]/16)+str(unpacked_data[i] % 16)
             IMEI += str(temp_str)
 
+        #获取LAC号
+        LAC = str()
+        for i in range(3, 5):
+            temp_str = str(unpacked_data[i]/16)+str(unpacked_data[i] % 16)
+            LAC += str(temp_str)
+
+        #获取cell_id
+        cell_id = str()
+        for i in range(34, 36):
+            temp_str = str(unpacked_data[i]/16)+str(unpacked_data[i] % 16)
+            cell_id += str(temp_str)
+
         #数据包为GPS数据
         if judge_handler == data_type_handler['gps']:
             self.debug_log(u"the packet is GPS Data")
-            end_id = hex(unpacked_data[40:42])
-            if end_id == 0x0D0A:
+            #获取end_id
+            end_id = str()
+            for i in range(40, 42):
+                temp_str = str(hex(unpacked_data[i]))
+                end_id += temp_str
+
+            self.debug_log(u"end id is" + end_id)
+            if end_id == '0x0D0x0A':
                 #坐标转换
                 latitude = (unpacked_data[22] * (256 ** 3) + unpacked_data[23] * (256 ** 2) +
                             unpacked_data[24] * 256 + unpacked_data[25])
@@ -191,10 +207,10 @@ class BusStreamRequestHandler(StreamRequestHandler):
                 latitude = float(latitude)
                 longitude = float(longitude)
 
-                packed_data = GPSDataPacket(0, unpacked_data[2:3], hex(unpacked_data[3:5]),
-                                            IMEI, unpacked_data[13:15], protocol_id, unpacked_data[16:22], latitude,
+                packed_data = GPSDataPacket(0, unpacked_data[2:3], LAC, IMEI,
+                                            unpacked_data[13:15], protocol_id, unpacked_data[16:22], latitude,
                                             longitude, unpacked_data[30:31], unpacked_data[31:33], unpacked_data[33:34],
-                                            hex(unpacked_data[34:36]), unpacked_data[36:40])
+                                            cell_id, unpacked_data[36:40])
                 self.debug_log(u"have packed the GPSData!")
 
                 #调用数据存储
@@ -214,8 +230,15 @@ class BusStreamRequestHandler(StreamRequestHandler):
             content_length = unpacked_data[2:3]
             if content_length >= 20:
                 packet_length = content_length + 3 + 2
-                end_id = unpacked_data[packet_length - 3:packet_length - 1]
-                if end_id == 0x0D0A:
+
+                #获取end_id
+                end_id = str()
+                for i in range(packet_length - 3, packet_length - 1):
+                    temp_str = str(hex(unpacked_data[i]))
+                    end_id += temp_str
+                self.debug_log(u"end id is" + end_id)
+
+                if end_id == '0x0D0x0A':
                     numberof_satellite = unpacked_data[17:18]
                     signal_to_noise_ratio = unpacked_data[18:18+numberof_satellite]
                     packed_data = HeartBreakPacket(1, content_length, unpacked_data[3:4],
