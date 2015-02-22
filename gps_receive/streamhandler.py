@@ -25,7 +25,7 @@ class BusStreamRequestHandler(StreamRequestHandler):
     '''
     @staticmethod
     def debug_log(debug_info):
-        now = unicode(time.strftime('%Y-%m-%d-%H:%M:%S', time.localtime(time.time())))
+        now = unicode(time.strftime('%Y/%m/%d-%H:%M:%S', time.localtime(time.time())))
         if GPS_DEBUG:
             if debug_info is not None:
                 print now + u":" + debug_info
@@ -155,6 +155,7 @@ class BusStreamRequestHandler(StreamRequestHandler):
         #获取数据包类型判断句柄
         protocol_id = hex(unpacked_data[15])
         judge_handler = protocol_id
+        self.debug_log(u"the packet's handler is: " + str(judge_handler))
 
         #获取IMEI号（车辆标识）
         IMEI = str()
