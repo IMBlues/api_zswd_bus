@@ -229,16 +229,17 @@ class BusStreamRequestHandler(StreamRequestHandler):
         #数据包为心跳包
         elif judge_handler == data_type_handler['heartbreak']:
             self.debug_log(u"the packet is heartbreak Data")
-            content_length = unpacked_data[2:3]
+            content_length = unpacked_data[2]
             if content_length >= 20:
-                packet_length = content_length + 3 + 2
+                packet_length = content_length + 3
+                self.debug_log(u"packet length is " + str(packet_length))
 
                 #获取end_id
                 end_id = str()
-                for i in range(packet_length - 3, packet_length - 1):
+                for i in range(packet_length - 2, packet_length):
                     temp_str = str(hex(unpacked_data[i]))
                     end_id += temp_str
-                self.debug_log(u"end id is" + end_id)
+                self.debug_log(u"end id is " + end_id)
 
                 if end_id == '0x0d0x0a':
                     numberof_satellite = unpacked_data[17:18]
@@ -258,7 +259,7 @@ class BusStreamRequestHandler(StreamRequestHandler):
                     self.request.send(return_data)
                     self.debug_log(u"heartbreak data has been send back successfully!")
                 else:
-                    self.debug_log(u"the heartbreak packet is not complete, and it will be"
+                    self.debug_log(u"the heartbreak packet is not complete, and it will be "
                                    u"discarded")
             else:
                 self.debug_log(u"the heartbreak packet is too short!")
