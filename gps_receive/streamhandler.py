@@ -119,14 +119,16 @@ class BusStreamRequestHandler(StreamRequestHandler):
         while True:
             try:
                 raw_data = self.request.recv(1024).strip()
-                if len(raw_data) == 0:
-                    self.debug_log(u"the data is empty!")
-                else:
-                    self.debug_log(u"the length of data is " + str(len(raw_data)))
-                    self.judge_and_pack(raw_data)
             except Exception as ex:
+                raw_data = ''
                 self.debug_log(u"Exception in receiving:" + str(ex))
                 break
+
+            if len(raw_data) == 0:
+                self.debug_log(u"the data is empty!")
+            else:
+                self.debug_log(u"the length of data is " + str(len(raw_data)))
+                self.judge_and_pack(raw_data)
 
     '''
     判断包类型与数据包封装
@@ -160,18 +162,6 @@ class BusStreamRequestHandler(StreamRequestHandler):
             temp_str = str(unpacked_data[i]/16)+str(unpacked_data[i] % 16)
             IMEI += str(temp_str)
 
-        #获取LAC号
-        LAC = str()
-        for i in range(3, 5):
-            temp_str = str(unpacked_data[i]/16)+str(unpacked_data[i] % 16)
-            LAC += str(temp_str)
-
-        #获取cell_id
-        cell_id = str()
-        for i in range(34, 36):
-            temp_str = str(unpacked_data[i]/16)+str(unpacked_data[i] % 16)
-            cell_id += str(temp_str)
-
         #数据包为GPS数据
         if judge_handler == data_type_handler['gps']:
             self.debug_log(u"the packet is GPS Data")
@@ -183,6 +173,18 @@ class BusStreamRequestHandler(StreamRequestHandler):
 
             self.debug_log(u"end id is" + end_id)
             if end_id == '0x0D0x0A':
+                #获取LAC号
+                LAC = str()
+                for i in range(3, 5):
+                    temp_str = str(unpacked_data[i]/16)+str(unpacked_data[i] % 16)
+                    LAC += str(temp_str)
+
+                #获取cell_id
+                cell_id = str()
+                for i in range(34, 36):
+                    temp_str = str(unpacked_data[i]/16)+str(unpacked_data[i] % 16)
+                    cell_id += str(temp_str)
+
                 #坐标转换
                 latitude = (unpacked_data[22] * (256 ** 3) + unpacked_data[23] * (256 ** 2) +
                             unpacked_data[24] * 256 + unpacked_data[25])
