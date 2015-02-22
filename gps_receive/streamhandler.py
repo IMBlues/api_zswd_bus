@@ -153,7 +153,7 @@ class BusStreamRequestHandler(StreamRequestHandler):
             self.debug_log(u"Exception during Unpacking data:" + str(ex))
 
         #获取数据包类型判断句柄
-        protocol_id = hex(unpacked_data[15])
+        protocol_id = unpacked_data[15]
         judge_handler = protocol_id
         self.debug_log(u"the packet's handler is: " + str(judge_handler))
 
