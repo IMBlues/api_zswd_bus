@@ -168,11 +168,15 @@ class BusStreamRequestHandler(StreamRequestHandler):
             self.debug_log(u"the packet is GPS Data")
             #获取end_id
             end_id = str()
-            for i in range(40, 42):
-                temp_str = str(hex(unpacked_data[i]))
-                end_id += temp_str
+            try:
+                for i in range(40, 42):
+                    temp_str = str(hex(unpacked_data[i]))
+                    end_id += temp_str
+                self.debug_log(u"end id is " + end_id)
+            except IndexError as ex:
+                self.debug_log(u"strange gps packet and we will test it! we know: " + str(ex))
+                end_id = '0xd0xa'
 
-            self.debug_log(u"end id is " + end_id)
             if end_id == '0xd0xa':
                 #获取LAC号
                 LAC = str()
@@ -212,9 +216,9 @@ class BusStreamRequestHandler(StreamRequestHandler):
                 self.debug_log(u"the latitude: " + str(latitude))
                 self.debug_log(u"the longitude: " + str(longitude))
 
-                packed_data = GPSDataPacket(0, unpacked_data[2:3], LAC, IMEI,
+                packed_data = GPSDataPacket(0, unpacked_data[2], LAC, IMEI,
                                             unpacked_data[13:15], protocol_id, unpacked_data[16:22], latitude,
-                                            longitude, unpacked_data[30:31], unpacked_data[31:33], unpacked_data[33:34],
+                                            longitude, unpacked_data[30], unpacked_data[31:33], unpacked_data[33],
                                             cell_id, unpacked_data[36:40])
                 self.debug_log(u"have packed the GPSData which is " + str(packed_data.packet_length) + u"bytes")
 
@@ -251,9 +255,9 @@ class BusStreamRequestHandler(StreamRequestHandler):
                 if True:
                     numberof_satellite = unpacked_data[17]
                     signal_to_noise_ratio = unpacked_data[18:18+numberof_satellite]
-                    packed_data = HeartBreakPacket(1, content_length, unpacked_data[3:4],
-                                                   unpacked_data[4:5], IMEI, unpacked_data[13:15],
-                                                   protocol_id, unpacked_data[16:17], numberof_satellite,
+                    packed_data = HeartBreakPacket(1, content_length, unpacked_data[3],
+                                                   unpacked_data[4], IMEI, unpacked_data[13:15],
+                                                   protocol_id, unpacked_data[16], numberof_satellite,
                                                    signal_to_noise_ratio)
                     self.debug_log(u"have packed the HeartBreakData, and ready to send back")
 
