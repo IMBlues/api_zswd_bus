@@ -140,9 +140,9 @@ class BusStreamRequestHandler(StreamRequestHandler):
         #类型判断句柄字典
         data_type_handler = {
             'gps': 0x10,
-            'heartbreak': 0x1A,
-            'ip': 0x1B,
-            'command': 0x1C,
+            'heartbreak': 0x1a,
+            'ip': 0x1b,
+            'command': 0x1c,
         }
 
         #分割成以字节为单位的元组
@@ -173,7 +173,7 @@ class BusStreamRequestHandler(StreamRequestHandler):
                 end_id += temp_str
 
             self.debug_log(u"end id is" + end_id)
-            if end_id == '0x0D0x0A':
+            if end_id == '0x0d0x0a':
                 #获取LAC号
                 LAC = str()
                 for i in range(3, 5):
@@ -240,7 +240,7 @@ class BusStreamRequestHandler(StreamRequestHandler):
                     end_id += temp_str
                 self.debug_log(u"end id is" + end_id)
 
-                if end_id == '0x0D0x0A':
+                if end_id == '0x0d0x0a':
                     numberof_satellite = unpacked_data[17:18]
                     signal_to_noise_ratio = unpacked_data[18:18+numberof_satellite]
                     packed_data = HeartBreakPacket(1, content_length, unpacked_data[3:4],
@@ -250,7 +250,7 @@ class BusStreamRequestHandler(StreamRequestHandler):
                     self.debug_log(u"have packed the HeartBreakData, and ready to send back")
 
                     #心跳包应答
-                    values = (0x54, 0x68, 0x1A, 0x0D, 0x0A)
+                    values = (0x54, 0x68, 0x1a, 0x0d, 0x0a)
                     s = struct.Struct('BBBBB')
                     return_data = s.pack(*values)
                     self.debug_log(u"the return data is" + str(values))
