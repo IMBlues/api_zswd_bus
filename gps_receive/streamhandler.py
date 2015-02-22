@@ -53,7 +53,6 @@ class BusStreamRequestHandler(StreamRequestHandler):
 
     @staticmethod
     def register_new_bus(data):
-
         '''
         if SpecialCoordinate.objects.filter(route_name='TEST'):
             special_coordinate = SpecialCoordinate.objects.get(route_name='TEST')
@@ -152,7 +151,7 @@ class BusStreamRequestHandler(StreamRequestHandler):
             self.debug_log(u"Exception during Unpacking data:" + str(ex))
 
         #获取数据包类型判断句柄
-        protocol_id = hex(unpacked_data[15:16])
+        protocol_id = hex(unpacked_data[15])
         judge_handler = protocol_id
 
         #获取IMEI号（车辆标识）
