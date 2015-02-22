@@ -172,7 +172,7 @@ class BusStreamRequestHandler(StreamRequestHandler):
                 temp_str = str(hex(unpacked_data[i]))
                 end_id += temp_str
 
-            self.debug_log(u"end id is" + end_id)
+            self.debug_log(u"end id is " + end_id)
             if end_id == '0xd0xa':
                 #获取LAC号
                 LAC = str()
@@ -216,7 +216,7 @@ class BusStreamRequestHandler(StreamRequestHandler):
                                             unpacked_data[13:15], protocol_id, unpacked_data[16:22], latitude,
                                             longitude, unpacked_data[30:31], unpacked_data[31:33], unpacked_data[33:34],
                                             cell_id, unpacked_data[36:40])
-                self.debug_log(u"have packed the GPSData!")
+                self.debug_log(u"have packed the GPSData which is " + str(packed_data.packet_length) + u"bytes")
 
                 #调用数据存储
                 data_for_app = {
@@ -226,10 +226,10 @@ class BusStreamRequestHandler(StreamRequestHandler):
                 }
                 self.save(data_for_app)
                 self.debug_log(u"have packed the GPSData for app!")
-                print "-----------------------------------------------------"
+                print "----------------------------------------"
             else:
                 self.debug_log(u"the GPSData packet is not complete,and it will be discarded")
-                print "-----------------------------------------------------"
+                print "----------------------------------------"
 
         #数据包为心跳包
         elif judge_handler == data_type_handler['heartbreak']:
@@ -265,29 +265,29 @@ class BusStreamRequestHandler(StreamRequestHandler):
 
                     self.request.send(return_data)
                     self.debug_log(u"heartbreak data has been send back successfully!")
-                    print "-----------------------------------------------------"
+                    print "----------------------------------------"
                 else:
                     self.debug_log(u"the heartbreak packet is not complete, and it will be "
                                    u"discarded")
-                    print "-----------------------------------------------------"
+                    print "----------------------------------------"
             else:
                 self.debug_log(u"the heartbreak packet is too short!")
-                print "-----------------------------------------------------"
+                print "----------------------------------------"
 
         #数据包为IP请求包
         elif judge_handler == data_type_handler['ip']:
             self.debug_log(u"the packet is ip Data")
-            print "-----------------------------------------------------"
+            print "----------------------------------------"
             pass
 
         #数据包为指令包
         elif judge_handler == data_type_handler['command']:
             self.debug_log(u"the packet is command Data")
-            print "-----------------------------------------------------"
+            print "----------------------------------------"
             pass
         else:
             self.debug_log(u"Unknown data type!")
-            print "-----------------------------------------------------"
+            print "----------------------------------------"
 
     '''
     数据库存储
