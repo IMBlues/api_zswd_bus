@@ -25,7 +25,7 @@ class BusStreamRequestHandler(StreamRequestHandler):
     '''
     @staticmethod
     def debug_log(debug_info):
-        now = unicode(time.strftime('%Y-%m-%d-%h-%m-%s', time.localtime(time.time())))
+        now = unicode(time.strftime('%Y-%m-%d-%H:%M:%S', time.localtime(time.time())))
         if GPS_DEBUG:
             if debug_info is not None:
                 print now + u":" + debug_info
@@ -123,7 +123,7 @@ class BusStreamRequestHandler(StreamRequestHandler):
                 if len(raw_data) == 0:
                     self.debug_log(u"the data is empty!")
                 else:
-                    self.debug_log(u"the length of data is %d" + str(len(raw_data)))
+                    self.debug_log(u"the length of data is " + str(len(raw_data)))
                     self.judge_and_pack(raw_data)
             except Exception as ex:
                 self.debug_log(u"Exception in receiving:" + str(ex))
@@ -152,6 +152,7 @@ class BusStreamRequestHandler(StreamRequestHandler):
             self.debug_log(u"Exception during Unpacking data:" + str(ex))
 
         #获取数据包类型判断句柄
+        self.debug_log(str(unpacked_data[0:2]))
         start_id = hex(unpacked_data[0:2])
         protocol_id = hex(unpacked_data[15:16])
         judge_handler = (start_id, protocol_id)
@@ -164,7 +165,7 @@ class BusStreamRequestHandler(StreamRequestHandler):
 
         #数据包为GPS数据
         if judge_handler == data_type_handler['gps']:
-
+            self.debug_log(u"the packet is GPS Data")
             end_id = hex(unpacked_data[40:42])
             if end_id == 0x0D0A:
                 #坐标转换
@@ -209,6 +210,7 @@ class BusStreamRequestHandler(StreamRequestHandler):
 
         #数据包为心跳包
         elif judge_handler == data_type_handler['heartbreak']:
+            self.debug_log(u"the packet is heartbreak Data")
             content_length = unpacked_data[2:3]
             if content_length >= 20:
                 packet_length = content_length + 3 + 2
@@ -238,10 +240,12 @@ class BusStreamRequestHandler(StreamRequestHandler):
 
         #数据包为IP请求包
         elif judge_handler == data_type_handler['ip']:
+            self.debug_log(u"the packet is ip Data")
             pass
 
         #数据包为指令包
         elif judge_handler == data_type_handler['command']:
+            self.debug_log(u"the packet is command Data")
             pass
         else:
             self.debug_log(u"Unknown data type!")
