@@ -30,7 +30,7 @@ class BusStreamRequestHandler(StreamRequestHandler):
             if debug_info is not None:
                 print now + u":" + debug_info
             else:
-                print now + u":no debug info"
+                print now + u":sorry,no debug info..."
         else:
             return
 
