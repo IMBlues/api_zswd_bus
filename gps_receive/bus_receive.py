@@ -64,6 +64,7 @@ if __name__ == '__main__':
     ADDR = (HOST, PORT)
     ThreadingTCPServer.allow_reuse_address = True
     server = ThreadingTCPServer(ADDR, BusStreamRequestHandler)
+    print 'Starting the server at host:' + HOST + ' and port:' + PORT
     server.serve_forever()
 
 '''
