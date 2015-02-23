@@ -137,6 +137,13 @@ class BusStreamRequestHandler(StreamRequestHandler):
         global unpacked_data
         global packed_data
 
+        #测试数据包展示
+        packet = str()
+        for i in range(0, len(raw_data)):
+            temp_str = str(hex(unpacked_data[i])).strip('0x')
+            packet += temp_str
+        self.debug_log(u"packet is: " + packet)
+
         #类型判断句柄字典
         data_type_handler = {
             'gps': 0x10,
