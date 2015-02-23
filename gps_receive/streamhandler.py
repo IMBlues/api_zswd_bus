@@ -1,4 +1,5 @@
 #! -*- coding:utf-8 -*-
+__author__ = 'blues'
 import os
 import sys
 import struct
@@ -34,12 +35,6 @@ class BusStreamRequestHandler(StreamRequestHandler):
         else:
             return
 
-    @staticmethod
-    def temp_save(data):
-        test_coordinate = TestCoordinate(latitude=data['latitude'], longitude=data['longitude'])
-        test_coordinate.save()
-        print 'time:', test_coordinate.time, '; lat:', test_coordinate.latitude, '; lont:', test_coordinate.longitude
-
     '''
     更新车辆坐标
     '''
@@ -53,29 +48,10 @@ class BusStreamRequestHandler(StreamRequestHandler):
 
     @staticmethod
     def register_new_bus(data):
-        '''
-        if SpecialCoordinate.objects.filter(route_name='TEST'):
-            special_coordinate = SpecialCoordinate.objects.get(route_name='TEST')
-        else:
-            special_coordinate = SpecialCoordinate(longitude=114.332141, latitude=30.520142, route_name='TEST')
-            special_coordinate.save()
-
-        if Route.objects.filter(final_stop="TEST2"):
-            route = Route.objects.get(departure_stop='TEST1', final_stop='TEST2',special_coordinate = special_coordinate)
-        else:
-            route = Route.objects.get(final_stop='TEST2')
-            route.save()
-
-        if Stop.objects.filter(name='TEST'):
-            stop = Stop.objects.get(name='TEST')
-        else:
-            stop = Stop(name='TEST', route=route, longitude=114.233333, latitude=30.520212)
-            stop.save()
-        '''
-
         try:
             coordinate = Coordinate.objects.all()[0]
-        except:
+        except Exception as ex:
+            print(u"Exception in register_new_bus:" + str(ex))
             coordinate = Coordinate(longitude=114.233333, latitude=30.5312333)
             coordinate.save()
         route = Route.objects.all()[0]
@@ -121,7 +97,7 @@ class BusStreamRequestHandler(StreamRequestHandler):
                 raw_data = self.request.recv(1024).strip()
             except Exception as ex:
                 raw_data = ''
-                self.debug_log(u"Exception in receiving:" + str(ex))
+                print(u"Exception in receiving:" + str(ex))
                 break
 
             if len(raw_data) == 0:
@@ -137,13 +113,6 @@ class BusStreamRequestHandler(StreamRequestHandler):
         global unpacked_data
         global packed_data
 
-        #测试数据包展示
-        packet = str()
-        for i in range(0, len(raw_data)):
-            temp_str = str(hex(unpacked_data[i])).strip('0x')
-            packet += temp_str
-        self.debug_log(u"packet is: " + packet)
-
         #类型判断句柄字典
         data_type_handler = {
             'gps': 0x10,
@@ -157,7 +126,14 @@ class BusStreamRequestHandler(StreamRequestHandler):
         try:
             unpacked_data = struct.unpack(form_string, raw_data)
         except Exception as ex:
-            self.debug_log(u"Exception during Unpacking data:" + str(ex))
+            print(u"Exception during Unpacking data:" + str(ex))
+
+        #测试数据包展示
+        packet = str()
+        for i in range(0, len(raw_data)):
+            temp_str = str(hex(unpacked_data[i])).replace('0x', ' ')
+            packet += temp_str
+        self.debug_log(u"packet is: " + packet)
 
         #获取数据包类型判断句柄
         protocol_id = unpacked_data[15]
@@ -173,16 +149,20 @@ class BusStreamRequestHandler(StreamRequestHandler):
         #数据包为GPS数据
         if judge_handler == data_type_handler['gps']:
             self.debug_log(u"the packet is GPS Data")
-            #获取end_id
+
+            #获取end_id(实际操作中发现部分数据包并没有end_id)
+            '''
             end_id = str()
             try:
                 for i in range(40, 42):
                     temp_str = str(hex(unpacked_data[i]))
                     end_id += temp_str
-                self.debug_log(u"end id is " + end_id)
+
             except IndexError as ex:
                 self.debug_log(u"strange gps packet and we will test it! we know: " + str(ex))
-                end_id = '0xd0xa'
+            '''
+
+            end_id = '0xd0xa'
 
             if end_id == '0xd0xa':
                 #获取LAC号
@@ -216,7 +196,7 @@ class BusStreamRequestHandler(StreamRequestHandler):
                     longitude = transform_data['x']
 
                 except Exception as ex:
-                    self.debug_log(u"Exception after calling API to unpack: " + str(ex))
+                    print(u"Exception after calling API to unpack: " + str(ex))
 
                 latitude = float(latitude)
                 longitude = float(longitude)
@@ -233,7 +213,7 @@ class BusStreamRequestHandler(StreamRequestHandler):
                     7: 'E&N, ready',
                 }
 
-                phone_status = unpacked_data[36]
+                phone_status = unpacked_data[40]
                 print(u"the terminal status:" + unicode(status_dic[phone_status]))
 
                 #数据包装（暂放内存，为扩展方便）
@@ -268,15 +248,18 @@ class BusStreamRequestHandler(StreamRequestHandler):
                 self.debug_log(u"packet length is " + str(packet_length))
 
                 #获取end_id
+                '''
                 end_id = str()
                 for i in range(packet_length - 2, packet_length):
                     temp_str = str(hex(unpacked_data[i]))
                     end_id += temp_str
                     self.debug_log(u"the end byte is " + temp_str)
                 self.debug_log(u"end id is " + end_id)
+                '''
 
                 #if end_id == '0x0d0x0a':
                 if True:
+
                     numberof_satellite = unpacked_data[17]
                     signal_to_noise_ratio = unpacked_data[18:18+numberof_satellite]
                     packed_data = HeartBreakPacket(1, content_length, unpacked_data[3],
@@ -285,6 +268,7 @@ class BusStreamRequestHandler(StreamRequestHandler):
                                                    signal_to_noise_ratio)
                     self.debug_log(u"have packed the HeartBreakData, and ready to send back")
                     print(u"the bus: " + packed_data.IMEI + u" is alive!")
+
 
                     #心跳包应答
                     values = (0x54, 0x68, 0x1a, 0x0d, 0x0a)
@@ -296,7 +280,7 @@ class BusStreamRequestHandler(StreamRequestHandler):
                         self.request.send(return_data)
                         print(u"heartbreak data has been send back successfully!")
                     except Exception as ex:
-                        self.debug_log(u"Exception during sending the back packet:" + str(ex))
+                        print(u"Exception during sending the back packet:" + str(ex))
 
                     print "----------------------------------------"
                 else:
@@ -336,4 +320,4 @@ class BusStreamRequestHandler(StreamRequestHandler):
             if bus.route:
                 self.update_bus_stop(data, bus)
         except Exception as ex:
-            self.debug_log(u"Exception during save GPSData into DB:" + str(ex))
+            print(u"Exception during save GPSData into DB:" + str(ex))

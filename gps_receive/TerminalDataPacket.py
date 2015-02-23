@@ -1,23 +1,4 @@
 __author__ = 'blues'
-'''
-Packet form example:
-GPSDataPacket:
-    start_id: 6868
-    packet_length: 25
-    LAC: 266A
-    IMEI: 0358688000000158
-    sequence_id: 0001
-    protocol_id: 10
-    date_time: 0A0C1E0A2E05
-    latitude: 027AC839
-    longitude: 0C4657C5
-    speed: 00
-    direction: 01
-    MNC: DF
-    cell_id: 100000
-    phone_status: 006
-    end_id: 0D0A
-'''
 
 
 class TerminalDataPacket():
@@ -59,7 +40,3 @@ class HeartBreakPacket(TerminalDataPacket):
         self.locator_status = locator_status
         self.numberof_satellite = numberof_satellite
         self.signal_to_noise_ratio = signal_to_noise_ratio
-
-
-class ExceptionPacket(TerminalDataPacket):
-    pass
