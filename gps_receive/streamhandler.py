@@ -209,19 +209,19 @@ class BusStreamRequestHandler(StreamRequestHandler):
                     longitude = transform_data['x']
 
                 except Exception as ex:
-                    self.debug_log(u"Exception after calling API to unpack:" + str(ex))
+                    self.debug_log(u"Exception after calling API to unpack: " + str(ex))
 
                 latitude = float(latitude)
                 longitude = float(longitude)
-                self.debug_log(u"the latitude: " + str(latitude))
-                self.debug_log(u"the longitude: " + str(longitude))
 
                 packed_data = GPSDataPacket(0, unpacked_data[2], LAC, IMEI,
                                             unpacked_data[13:15], protocol_id, unpacked_data[16:22], latitude,
                                             longitude, unpacked_data[30], unpacked_data[31:33], unpacked_data[33],
                                             cell_id, unpacked_data[36:40])
-                self.debug_log(u"have packed the GPSData which is " + str(packed_data.packet_length) + u"bytes")
-                self.debug_log(u"the bus' IMEI: " + str(packed_data.IMEI))
+                self.debug_log(u"have packed the GPSData which is " + str(packed_data.packet_length) + u" bytes long")
+                print(u"the bus' IMEI: " + str(packed_data.IMEI))
+                print(u"the latitude: " + str(latitude))
+                print(u"the longitude: " + str(longitude))
 
                 #调用数据存储
                 data_for_app = {
@@ -261,6 +261,7 @@ class BusStreamRequestHandler(StreamRequestHandler):
                                                    protocol_id, unpacked_data[16], numberof_satellite,
                                                    signal_to_noise_ratio)
                     self.debug_log(u"have packed the HeartBreakData, and ready to send back")
+                    print(u"the bus: " + packed_data.IMEI + u" is alive!")
 
                     #心跳包应答
                     values = (0x54, 0x68, 0x1a, 0x0d, 0x0a)
@@ -270,7 +271,7 @@ class BusStreamRequestHandler(StreamRequestHandler):
 
                     try:
                         self.request.send(return_data)
-                        self.debug_log(u"heartbreak data has been send back successfully!")
+                        print(u"heartbreak data has been send back successfully!")
                     except Exception as ex:
                         self.debug_log(u"Exception during sending the back packet:" + str(ex))
 
