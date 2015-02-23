@@ -214,10 +214,26 @@ class BusStreamRequestHandler(StreamRequestHandler):
                 latitude = float(latitude)
                 longitude = float(longitude)
 
+                #终端状态判断
+                status_dic = {
+                    0: 'W&S, not ready',
+                    1: 'W&S, ready',
+                    2: 'W&N, not ready',
+                    3: 'W&N, ready',
+                    4: 'E&S, not ready',
+                    5: 'E&S, ready',
+                    6: 'E&N, not ready',
+                    7: 'E&N, ready',
+                }
+
+                phone_status = unpacked_data[36]
+                print(u"the terminal status:" + unicode(status_dic[phone_status]))
+
+                #数据包装（暂放内存，为扩展方便）
                 packed_data = GPSDataPacket(0, unpacked_data[2], LAC, IMEI,
                                             unpacked_data[13:15], protocol_id, unpacked_data[16:22], latitude,
                                             longitude, unpacked_data[30], unpacked_data[31:33], unpacked_data[33],
-                                            cell_id, unpacked_data[36:40])
+                                            cell_id, phone_status)
                 self.debug_log(u"have packed the GPSData which is " + str(packed_data.packet_length) + u" bytes long")
                 print(u"the bus' IMEI: " + str(packed_data.IMEI))
                 print(u"the latitude: " + str(latitude))
@@ -240,7 +256,7 @@ class BusStreamRequestHandler(StreamRequestHandler):
         elif judge_handler == data_type_handler['heartbreak']:
             self.debug_log(u"the packet is heartbreak Data")
             content_length = unpacked_data[2]
-            if content_length >= 20:
+            if content_length >= 15:
                 packet_length = content_length + 3
                 self.debug_log(u"packet length is " + str(packet_length))
 
