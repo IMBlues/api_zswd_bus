@@ -134,6 +134,7 @@ class BusStreamRequestHandler(StreamRequestHandler):
         #通过数据包长度判断gps数据包个数
         if raw_data_len > 40:
             numberof_data_packet = (raw_data_len + 2)/42
+            print(u"we got " + str(numberof_data_packet) + u"packets")
         else:
             pass
 
@@ -247,9 +248,9 @@ class BusStreamRequestHandler(StreamRequestHandler):
                     self.save(data_for_app)
                     self.debug_log(u"have packed the GPSData for app!")
                     print "----------------------------------------"
-                else:
-                    self.debug_log(u"the GPSData packet is not complete,and it will be discarded")
-                    print "----------------------------------------"
+            else:
+                self.debug_log(u"the GPSData packet is not complete,and it will be discarded")
+                print "----------------------------------------"
 
         #数据包为心跳包
         elif judge_handler == data_type_handler['heartbreak']:
