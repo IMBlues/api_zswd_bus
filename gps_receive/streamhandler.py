@@ -19,6 +19,7 @@ class BusStreamRequestHandler(StreamRequestHandler):
 
     packed_data = TerminalDataPacket()
     unpacked_data = ()
+    numberof_data_packet = 1
     data_type = -1
 
     '''
@@ -112,6 +113,7 @@ class BusStreamRequestHandler(StreamRequestHandler):
     def judge_and_pack(self, raw_data):
         global unpacked_data
         global packed_data
+        global numberof_data_packet
 
         #类型判断句柄字典
         data_type_handler = {
@@ -122,11 +124,18 @@ class BusStreamRequestHandler(StreamRequestHandler):
         }
 
         #分割成以字节为单位的元组
-        form_string = 'B' * len(raw_data)
+        raw_data_len = len(raw_data)
+        form_string = 'B' * raw_data_len
         try:
             unpacked_data = struct.unpack(form_string, raw_data)
         except Exception as ex:
             print(u"Exception during Unpacking data:" + str(ex))
+
+        #通过数据包长度判断gps数据包个数
+        if raw_data_len > 40:
+            numberof_data_packet = (raw_data_len + 2)/42
+        else:
+            pass
 
         #测试数据包展示
         packet = str()
@@ -146,11 +155,11 @@ class BusStreamRequestHandler(StreamRequestHandler):
             temp_str = str(unpacked_data[i]/16)+str(unpacked_data[i] % 16)
             IMEI += str(temp_str)
 
-        #数据包为GPS数据
+        #数据包为GPS数据（可能一次发送多个包）
         if judge_handler == data_type_handler['gps']:
             self.debug_log(u"the packet is GPS Data")
 
-            #获取end_id(实际操作中发现部分数据包并没有end_id)
+            #获取end_id（最后一个GPS包无end_id）
             '''
             end_id = str()
             try:
@@ -177,67 +186,70 @@ class BusStreamRequestHandler(StreamRequestHandler):
                     temp_str = str(unpacked_data[i]/16)+str(unpacked_data[i] % 16)
                     cell_id += str(temp_str)
 
-                #坐标转换
-                latitude = (unpacked_data[22] * (256 ** 3) + unpacked_data[23] * (256 ** 2) +
-                            unpacked_data[24] * 256 + unpacked_data[25])
-                latitude = (latitude + 0.0) / (30000*60)
-                longitude = (unpacked_data[26] * (256 ** 3) + unpacked_data[27] * (256 ** 2) +
-                             unpacked_data[28] * 256 + unpacked_data[29])
-                longitude = (longitude + 0.0) / (30000*60)
+                for i in range(0, numberof_data_packet):
 
-                #百度地图API
-                transform_url = "http://api.map.baidu.com/geoconv/v1/?coords=" + str(longitude) + \
-                                "," + str(latitude) + "&from=1&to=5&ak=7yTvUeESUHB7GTw9Pb9BRv1U"
+                    #坐标转换
+                    latitude = (unpacked_data[22 + i*42] * (256 ** 3) + unpacked_data[23 + i*42] * (256 ** 2) +
+                                unpacked_data[24 + i*42] * 256 + unpacked_data[25 + i*42])
+                    latitude = (latitude + 0.0) / (30000*60)
+                    longitude = (unpacked_data[26 + i*42] * (256 ** 3) + unpacked_data[27 + i*42] * (256 ** 2) +
+                                 unpacked_data[28 + i*42] * 256 + unpacked_data[29 + i*42])
+                    longitude = (longitude + 0.0) / (30000*60)
 
-                transform_data = urllib.urlopen(transform_url).read()
-                try:
-                    transform_data = eval(transform_data)['result'][0]
-                    latitude = transform_data['y']
-                    longitude = transform_data['x']
+                    #百度地图API
+                    transform_url = "http://api.map.baidu.com/geoconv/v1/?coords=" + str(longitude) + \
+                                    "," + str(latitude) + "&from=1&to=5&ak=7yTvUeESUHB7GTw9Pb9BRv1U"
 
-                except Exception as ex:
-                    print(u"Exception after calling API to unpack: " + str(ex))
+                    transform_data = urllib.urlopen(transform_url).read()
+                    try:
+                        transform_data = eval(transform_data)['result'][0]
+                        latitude = transform_data['y']
+                        longitude = transform_data['x']
 
-                latitude = float(latitude)
-                longitude = float(longitude)
+                    except Exception as ex:
+                        print(u"Exception after calling API to unpack: " + str(ex))
 
-                #终端状态判断
-                status_dic = {
-                    0: 'W&S, not ready',
-                    1: 'W&S, ready',
-                    2: 'W&N, not ready',
-                    3: 'W&N, ready',
-                    4: 'E&S, not ready',
-                    5: 'E&S, ready',
-                    6: 'E&N, not ready',
-                    7: 'E&N, ready',
-                }
+                    latitude = float(latitude)
+                    longitude = float(longitude)
 
-                phone_status = unpacked_data[40]
-                print(u"the terminal status:" + unicode(status_dic[phone_status]))
+                    #终端状态判断
+                    status_dic = {
+                        0: 'W&S, not ready',
+                        1: 'W&S, ready',
+                        2: 'W&N, not ready',
+                        3: 'W&N, ready',
+                        4: 'E&S, not ready',
+                        5: 'E&S, ready',
+                        6: 'E&N, not ready',
+                        7: 'E&N, ready',
+                    }
 
-                #数据包装（暂放内存，为扩展方便）
-                packed_data = GPSDataPacket(0, unpacked_data[2], LAC, IMEI,
-                                            unpacked_data[13:15], protocol_id, unpacked_data[16:22], latitude,
-                                            longitude, unpacked_data[30], unpacked_data[31:33], unpacked_data[33],
-                                            cell_id, phone_status)
-                self.debug_log(u"have packed the GPSData which is " + str(packed_data.packet_length) + u" bytes long")
-                print(u"the bus' IMEI: " + str(packed_data.IMEI))
-                print(u"the latitude: " + str(latitude))
-                print(u"the longitude: " + str(longitude))
+                    phone_status = unpacked_data[39]
+                    print(u"the terminal status:" + unicode(status_dic[phone_status]))
 
-                #调用数据存储
-                data_for_app = {
-                    'bus_number': packed_data.IMEI,
-                    'latitude': packed_data.latitude,
-                    'longitude': packed_data.longitude,
-                }
-                self.save(data_for_app)
-                self.debug_log(u"have packed the GPSData for app!")
-                print "----------------------------------------"
-            else:
-                self.debug_log(u"the GPSData packet is not complete,and it will be discarded")
-                print "----------------------------------------"
+                    #数据包装（暂放内存，为扩展方便）
+                    packed_data = GPSDataPacket(0, unpacked_data[2], LAC, IMEI,
+                                                unpacked_data[13:15], protocol_id, unpacked_data[16:22], latitude,
+                                                longitude, unpacked_data[30], unpacked_data[31:33], unpacked_data[33],
+                                                cell_id, phone_status)
+                    self.debug_log(u"have packed the GPSData which is " + str(packed_data.packet_length) +
+                                   u" bytes long")
+                    print(u"the bus' IMEI: " + str(packed_data.IMEI))
+                    print(u"the latitude: " + str(latitude))
+                    print(u"the longitude: " + str(longitude))
+
+                    #调用数据存储
+                    data_for_app = {
+                        'bus_number': packed_data.IMEI,
+                        'latitude': packed_data.latitude,
+                        'longitude': packed_data.longitude,
+                    }
+                    self.save(data_for_app)
+                    self.debug_log(u"have packed the GPSData for app!")
+                    print "----------------------------------------"
+                else:
+                    self.debug_log(u"the GPSData packet is not complete,and it will be discarded")
+                    print "----------------------------------------"
 
         #数据包为心跳包
         elif judge_handler == data_type_handler['heartbreak']:
@@ -268,7 +280,6 @@ class BusStreamRequestHandler(StreamRequestHandler):
                                                    signal_to_noise_ratio)
                     self.debug_log(u"have packed the HeartBreakData, and ready to send back")
                     print(u"the bus: " + packed_data.IMEI + u" is alive!")
-
 
                     #心跳包应答
                     values = (0x54, 0x68, 0x1a, 0x0d, 0x0a)
