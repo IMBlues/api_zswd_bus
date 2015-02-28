@@ -134,9 +134,9 @@ class BusStreamRequestHandler(StreamRequestHandler):
         #通过数据包长度判断gps数据包个数
         if raw_data_len > 40:
             numberof_data_packet = (raw_data_len + 2)/42
-            print(u"we got " + str(numberof_data_packet) + u"packets")
         else:
-            pass
+            numberof_data_packet = 1
+        print(u"we got " + str(numberof_data_packet) + u"packets")
 
         #测试数据包展示
         packet = str()
