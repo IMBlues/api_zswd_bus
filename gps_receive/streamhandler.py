@@ -47,6 +47,9 @@ class BusStreamRequestHandler(StreamRequestHandler):
         bus.coordinate = coordinate
         bus.save()
 
+    '''
+    注册新车辆
+    '''
     @staticmethod
     def register_new_bus(data):
         try:
@@ -322,14 +325,11 @@ class BusStreamRequestHandler(StreamRequestHandler):
     数据库存储
     '''
     def save(self, data):
-        try:
-            if Bus.objects.filter(number=data['bus_number']):
-                bus = Bus.objects.get(number=data['bus_number'])
-            else:
-                bus = self.register_new_bus(data)
-                self.update_bus_coordinate(data, bus)
-                self.update_bus_route(data, bus)
-            if bus.route:
-                self.update_bus_stop(data, bus)
-        except Exception as ex:
-            print(u"Exception during save GPSData into DB:" + str(ex))
+        if Bus.objects.filter(number=data['bus_number']):
+            bus = Bus.objects.get(number=data['bus_number'])
+        else:
+            bus = self.register_new_bus(data)
+        self.update_bus_coordinate(data, bus)
+        self.update_bus_route(data, bus)
+        if bus.route:
+            self.update_bus_stop(data, bus)
